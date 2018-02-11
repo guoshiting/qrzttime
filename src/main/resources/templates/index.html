@@ -1,0 +1,196 @@
+<!DOCTYPE HTML>
+<html xmlns="http://www.w3.org/1999/xhtml"
+	xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="UTF-8">
+<!-- 最新版本的 Bootstrap 核心 CSS 文件 -->
+<link rel="stylesheet" href="../static/css/bootstrap.min.css"
+	th:href="@{/css/bootstrap.min.css}">
+<link rel="stylesheet" href="../static/css/tilple.css"
+	th:href="@{/css/tilple.css}">
+<link rel="stylesheet" href="../static/css/bootstrapValidator.min.css" th:href="@{/css/bootstrapValidator.min.css}">
+<!-- 最新的 Bootstrap 核心 JavaScript 文件 -->
+<script src="../static/js/jquery.min.js" th:src="@{/js/jquery.min.js}"></script>
+<script src="../static/js/bootstrap.min.js"
+	th:src="@{/js/bootstrap.min.js}"></script>
+<script src="../static/js/tilpil.js" th:src="@{/js/tilpil.js}"></script>
+<script src="../static/js/bootstrapValidator.min.js" th:src="@{/js/bootstrapValidator.min.js}"></script>
+<style type="text/css">
+/*鼠标悬停样式*/
+.table-hover tbody tr:hover td, .table-hover tbody tr:hover th {
+	background-color: #DAF3F5
+}
+</style>
+<title>定时任务表</title>
+</head>
+<body>
+	<div class="container">
+		<div class="page-header" style="border-bottom: 0px solid #eee;">
+			<h1>
+				<center>定时任务详情表</center>
+			</h1>
+		</div>
+		<table id="table1"
+			class="table table-bordered table-striped table-hover col-xs-12 col-sm-12 col-md-12 col-lg-12">
+			<thead class="alert alert-info">
+				<tr>
+					<td>类名</td>
+					<td>任务名称</td>
+					<td>cron表达式</td>
+					<td>运行状态</td>
+					<td>描述</td>
+					<td>操作</td>
+				</tr>
+			</thead>
+			<tbody>
+				<tr th:each="job,iterStat : ${jobList}">
+					<td th:text="${job.className}"></td>
+					<td th:text="${job.job}"></td>
+					<td th:text="${job.corn}"></td>
+					<td th:text="${job.jobStatus}"></td>
+					<td th:text="${job.jobDes}"></td>
+					<td>
+						<button type="button" class="btn btn-info" onclick="stopJob(this)">停用</button>
+						<button type="button" class="btn btn-info"
+							onclick="startJob(this)">启用</button>
+						<button type="button" class="btn btn-info"
+							onclick="updateJob(this)">修改</button>
+					</td>
+				</tr>
+			</tbody>
+		</table>
+	</div>
+	<!-- 模态弹出窗内容 -->
+	<div class="modal" id="y-myModalAdd" tabindex="-1" role="dialog"
+		aria-labelledby="mySmallModalLabel" aria-hidden="true">
+		<div class="modal-dialog">
+			<div class="modal-content">
+				<div class="modal-header">
+					<button type="button" class="close" data-dismiss="modal">
+						<span aria-hidden="true">×</span> <span class="sr-only">Close</span>
+					</button>
+					<h4 class="modal-title">警告</h4>
+				</div>
+				<div class="modal-body">
+					<p id="tipConcent"></p>
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-default" data-dismiss="modal">关闭</button>
+				</div>
+			</div>
+		</div>
+	</div>
+	<!-- 模态弹出窗内容 -->
+	<div class="modal" id="z-myModalAdd" tabindex="-1" role="dialog"
+		aria-labelledby="mySmallModalLabel" aria-hidden="true">
+		<div class="modal-dialog">
+			<div class="modal-content">
+				<div class="modal-header">
+					<button type="button" class="close" data-dismiss="modal">
+						<span aria-hidden="true">×</span> <span class="sr-only">Close</span>
+					</button>
+					<h4 class="modal-title">修改</h4>
+				</div>
+				<div class="modal-body">
+				<form id="form">
+					<div class="form-group">
+					<label >cron表达式:</label>
+					<input type="text" class="form-control" id="corn" name="corn">
+					<input type="hidden" id="claz" name="claz">
+					<p><font color="red" size="8px" id="tipFont"></font></p>
+					</div>
+				</form>
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-default" data-dismiss="modal">关闭</button>
+					<button type="submit" name="submit" class="btn btn-primary" onclick="submit(this)">保存</button>
+				</div>
+			</div>
+		</div>
+	</div>
+	<div id="dm-notif"></div>
+	<script type="text/javascript">
+	var updateTr;
+		function submit(){
+			var corn = $("#corn").val();
+			var claz = $("#claz").val();
+			if(corn==""){
+				$("#tipFont").html("cron表达式不能为空");
+				return;
+			}else{
+				$("#tipFont").html("");
+			}
+			$.ajax({
+				url : "updatCorn",
+				data : {
+					corn : corn,
+					key : claz
+				},
+				type : "POST",
+				success : function(date) {
+					if (date.flag) {
+						dm_notification('定时任务修改完成', 'orange', 2000);
+						var $modalz = $('#z-myModalAdd');
+						$modalz.modal('hide');
+						//window.location.reload();
+						$(updateTr.children()[2]).html(corn);
+					} else {
+						$('#tipConcent').html(date.msg);
+						var $modal = $('#y-myModalAdd'); 
+						$modal.modal({backdrop : 'static'});
+					}
+				}
+			});
+		}
+		function updateJob(tt){
+			var claz = $($(tt).parent().parent('tr').children()[0]).text();
+			updateTr = $(tt).parent().parent('tr');
+			$("#claz").val(claz);
+			var $modalz = $('#z-myModalAdd'); //y-myModalAdd是弹出的遮罩层的id，通过这两个id进行绑定
+			$modalz.modal({backdrop : 'static'});
+		}
+		function startJob(tt){
+			var claz = $($(tt).parent().parent('tr').children()[0]).text();
+			$.ajax({
+				url : "startJob",
+				data : {
+					key : claz
+				},
+				type : "POST",
+				success : function(date) {
+					if (date.flag) {
+						$($(tt).parent().parent('tr').children()[3])
+								.text("已启用");
+						dm_notification('定时任务启用完成', 'orange', 2000);
+					} else {
+						$('#tipConcent').html(date.msg);
+						var $modal = $('#y-myModalAdd'); 
+						$modal.modal({backdrop : 'static'});
+					}
+				}
+			});
+		}
+		function stopJob(tt) {
+			var claz = $($(tt).parent().parent('tr').children()[0]).text();
+			$.ajax({
+				url : "stopJob",
+				data : {
+					key : claz
+				},
+				type : "POST",
+				success : function(date) {
+					if (date.flag) {
+						$($(tt).parent().parent('tr').children()[3])
+								.text("已停用");
+						dm_notification('定时任务停用完成', 'orange', 2000);
+					} else {
+						$('#tipConcent').html(date.msg);
+						var $modal = $('#y-myModalAdd'); 
+						$modal.modal({backdrop : 'static'});
+					}
+				}
+			});
+		}
+	</script>
+</body>
+</html>
